@@ -1,0 +1,1072 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Clue 250K</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #eef2ea;
+      --panel: #fffdf7;
+      --ink: #17211c;
+      --muted: #66716b;
+      --line: #cbd5cd;
+      --green: #2f6b4f;
+      --green-soft: #dcece1;
+      --red: #a83e3e;
+      --blue: #315b88;
+      --gold: #a06b16;
+      --shadow: 0 8px 24px rgba(20, 30, 25, 0.12);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    body {
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+      display: flex;
+      min-height: 100dvh;
+    }
+
+    button,
+    select {
+      font: inherit;
+      min-height: 34px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--ink);
+      padding: 6px 9px;
+      touch-action: manipulation;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    button.primary {
+      background: var(--green);
+      border-color: var(--green);
+      color: #fff;
+    }
+
+    button.active {
+      background: var(--green-soft);
+      border-color: var(--green);
+    }
+
+    button:disabled {
+      opacity: .45;
+    }
+
+    .app {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-rows: 46px minmax(0, 1fr) 214px;
+      background: var(--bg);
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 6px 10px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 253, 247, .92);
+      backdrop-filter: blur(10px);
+      z-index: 5;
+    }
+
+    .title {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex: 0 0 auto;
+    }
+
+    .header-actions button {
+      min-height: 32px;
+      white-space: nowrap;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: 0;
+      line-height: 1;
+    }
+
+    .status {
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .status {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 24vw;
+    }
+
+    .stage {
+      position: relative;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }
+
+    .dock {
+      border-top: 1px solid var(--line);
+      background: var(--panel);
+      box-shadow: 0 -10px 24px rgba(20, 30, 25, 0.08);
+      display: grid;
+      grid-template-rows: 42px 45px minmax(0, 1fr);
+      min-height: 0;
+    }
+
+    .dock-row {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 5px 8px;
+      border-bottom: 1px solid var(--line);
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .dock-row::-webkit-scrollbar {
+      display: none;
+    }
+
+    .chip {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 30px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: #f8faf4;
+      padding: 4px 9px;
+      font-weight: 700;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .chip.active {
+      border-color: var(--green);
+      background: var(--green-soft);
+    }
+
+    .swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      display: inline-block;
+    }
+
+    .compact-select {
+      flex: 1 0 118px;
+      min-width: 112px;
+      max-width: 170px;
+    }
+
+    .wide-select {
+      max-width: none;
+    }
+
+    .is-hidden {
+      display: none;
+    }
+
+    .prompt-area {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 8px;
+      padding: 8px;
+    }
+
+    .box {
+      min-height: 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcf8;
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: 24px minmax(0, 1fr);
+    }
+
+    .box h2 {
+      margin: 0;
+      padding: 5px 8px;
+      font-size: 12px;
+      color: var(--muted);
+      border-bottom: 1px solid var(--line);
+      line-height: 1;
+    }
+
+    pre {
+      margin: 0;
+      padding: 7px 8px;
+      overflow-y: auto;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      line-height: 1.25;
+      font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      scrollbar-width: thin;
+      scrollbar-color: #8a9a8f #edf3ec;
+    }
+
+    pre::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+
+    pre::-webkit-scrollbar-track {
+      background: #edf3ec;
+    }
+
+    pre::-webkit-scrollbar-thumb {
+      background: #8a9a8f;
+      border: 2px solid #edf3ec;
+      border-radius: 999px;
+    }
+
+    #modelOutput {
+      background: #101713;
+      color: #e8f5e9;
+      scrollbar-color: #87a78f #101713;
+    }
+
+    #modelOutput::-webkit-scrollbar-track {
+      background: #101713;
+    }
+
+    #modelOutput::-webkit-scrollbar-thumb {
+      background: #87a78f;
+      border-color: #101713;
+    }
+
+    @media (max-width: 640px) {
+      .app {
+        grid-template-rows: 42px minmax(0, 1fr) 286px;
+      }
+
+      h1 {
+        font-size: 16px;
+      }
+
+      .title {
+        gap: 6px;
+      }
+
+      .status {
+        max-width: 78px;
+      }
+
+      .header-actions {
+        gap: 5px;
+      }
+
+      .header-actions button {
+        min-height: 30px;
+        padding: 5px 7px;
+        font-size: 12px;
+      }
+
+      .prompt-area {
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr 1fr;
+        gap: 6px;
+        padding: 6px;
+      }
+
+      pre {
+        font-size: 11px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="title">
+        <h1>Clue 250K</h1>
+        <div id="status" class="status">Loading...</div>
+      </div>
+      <div class="header-actions">
+        <button id="randomBtn" type="button">Randomize</button>
+        <button id="solveBtn" class="primary" type="button">Solve</button>
+      </div>
+    </header>
+
+    <section class="stage">
+      <canvas id="board" aria-label="Clue board"></canvas>
+    </section>
+
+    <section class="dock">
+      <div id="chips" class="dock-row"></div>
+      <div class="dock-row">
+        <select id="nameSelect" class="compact-select" aria-label="Selected name"></select>
+        <select id="weaponSelect" class="compact-select" aria-label="Selected weapon"></select>
+        <select id="woundSelect" class="compact-select" aria-label="Body wound"></select>
+        <button id="addBtn" type="button">+</button>
+        <button id="removeBtn" type="button">-</button>
+      </div>
+      <div class="prompt-area">
+        <div class="box">
+          <h2 id="promptTitle">Prompt</h2>
+          <pre id="promptText"></pre>
+        </div>
+        <div class="box">
+          <h2 id="modelTitle">Model Output</h2>
+          <pre id="modelOutput"></pre>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="./model.js"></script>
+  <script>
+    const NAMES = ["Alex","Avery","Basil","Blair","Blake","Casey","Dana","Devin","Drew","Eden","Ellis","Emery","Erin","Felix","Finn","Gail","Gray","Harper","Hazel","Ira","Jamie","Jordan","Josh","Jules","Kai","Kendall","Lane","Laurel","Lee","Logan","Mara","Maria","Micah","Morgan","Nico","Noel","Nora","Owen","Paige","Parker","Peyton","Quinn","Reese","Remy","Riley","Robin","Rowan","Sage","Sam","Sasha","Sidney","Sky","Sloan","Talia","Taylor","Theo","Vale","Wren","Zane","Mina","Ivy","Lena","Toby","June"];
+    const LOCATIONS = ["library","kitchen","living room","study","hallway","cellar","attic","garden","garage","pantry","office","lounge","chapel","conservatory","ballroom","dining room","parlor","nursery","balcony","courtyard","observatory","gallery","theater","basement"];
+    const WEAPONS = ["knife","pipe","rope","wrench","candle","poison","revolver","hammer","axe","poker","dagger","chain","bat","statue","scissors","shovel","vial","club","cable","needle"];
+    const WOUND_BY_WEAPON = {
+      knife: "knife wound", pipe: "pipe bruise", rope: "rope mark", wrench: "wrench bruise",
+      candle: "candle wax", poison: "poison trace", revolver: "bullet wound", hammer: "hammer dent",
+      axe: "axe wound", poker: "poker burn", dagger: "dagger wound", chain: "chain mark",
+      bat: "bat bruise", statue: "statue blow", scissors: "scissor cut", shovel: "shovel mark",
+      vial: "glass cut", club: "club bruise", cable: "cable mark", needle: "needle mark"
+    };
+    const WEAPON_BY_WOUND = Object.fromEntries(Object.entries(WOUND_BY_WEAPON).map(([weapon, wound]) => [wound, weapon]));
+    const COLORS = ["#2f6b4f", "#315b88", "#a06b16", "#8a4669"];
+    const CONFIG = { vocabSize: 512, featureDim: 72, maxContextLength: 96, numBlocks: 3 };
+
+    const state = {
+      rooms: ["library", "kitchen", "garden", "study", "hallway", "lounge"],
+      suspects: [
+        { name: "Josh", room: "library", weapon: "pipe" },
+        { name: "Basil", room: "kitchen", weapon: "knife" },
+        { name: "Maria", room: "lounge", weapon: "rope" }
+      ],
+      selected: 0,
+      selectedKind: "suspect",
+      bodyRoom: "library",
+      bodyWeapon: null,
+      tokenizer: null,
+      model: null,
+      hitRooms: [],
+      roomScroll: {}
+    };
+
+    const el = {};
+    let canvas;
+    let ctx;
+    let boardDrag = null;
+
+    class FastGPT {
+      constructor(config) {
+        this.vocabSize = config.vocabSize;
+        this.featureDim = config.featureDim;
+        this.maxContextLength = config.maxContextLength;
+        this.numBlocks = config.numBlocks;
+        this.hiddenDim = this.featureDim * 4;
+        this.epsilon = 1e-5;
+      }
+
+      loadWeights(buffer) {
+        const weights = new Float32Array(buffer);
+        let offset = 0;
+        const take = (count) => {
+          const values = weights.subarray(offset, offset + count);
+          offset += count;
+          return values;
+        };
+        const F = this.featureDim;
+        const H = this.hiddenDim;
+        this.tokenEmbeddings = take(this.vocabSize * F);
+        this.positionalEmbeddings = take(this.maxContextLength * F);
+        this.blocks = [];
+        for (let i = 0; i < this.numBlocks; ++i) {
+          this.blocks.push({
+            ln1: take(F), q: take(F * F), k: take(F * F), v: take(F * F), o: take(F * F),
+            ln2: take(F), up: take(F * H), down: take(H * F)
+          });
+        }
+        this.finalNorm = take(F);
+        if (offset !== weights.length) throw new Error(`weight count mismatch: ${offset} != ${weights.length}`);
+      }
+
+      rmsNorm(x, rows, gamma) {
+        const F = this.featureDim;
+        const out = new Float32Array(rows * F);
+        for (let r = 0; r < rows; ++r) {
+          const base = r * F;
+          let sumSq = 0;
+          for (let c = 0; c < F; ++c) sumSq += x[base + c] * x[base + c];
+          const inv = 1 / Math.sqrt(sumSq / F + this.epsilon);
+          for (let c = 0; c < F; ++c) out[base + c] = x[base + c] * inv * gamma[c];
+        }
+        return out;
+      }
+
+      matmul(a, rows, cols, b, outCols) {
+        const out = new Float32Array(rows * outCols);
+        for (let r = 0; r < rows; ++r) {
+          for (let oc = 0; oc < outCols; ++oc) {
+            let sum = 0;
+            for (let k = 0; k < cols; ++k) sum += a[r * cols + k] * b[k * outCols + oc];
+            out[r * outCols + oc] = sum;
+          }
+        }
+        return out;
+      }
+
+      attention(x, rows, block) {
+        const F = this.featureDim;
+        const q = this.matmul(x, rows, F, block.q, F);
+        const k = this.matmul(x, rows, F, block.k, F);
+        const v = this.matmul(x, rows, F, block.v, F);
+        const mixed = new Float32Array(rows * F);
+        const scale = 1 / Math.sqrt(F);
+
+        for (let i = 0; i < rows; ++i) {
+          const scores = new Float32Array(i + 1);
+          let maxScore = -Infinity;
+          for (let j = 0; j <= i; ++j) {
+            let dot = 0;
+            for (let f = 0; f < F; ++f) dot += q[i * F + f] * k[j * F + f];
+            const score = dot * scale;
+            scores[j] = score;
+            if (score > maxScore) maxScore = score;
+          }
+          let denom = 0;
+          for (let j = 0; j <= i; ++j) {
+            const e = Math.exp(scores[j] - maxScore);
+            scores[j] = e;
+            denom += e;
+          }
+          for (let f = 0; f < F; ++f) {
+            let sum = 0;
+            for (let j = 0; j <= i; ++j) sum += (scores[j] / denom) * v[j * F + f];
+            mixed[i * F + f] = sum;
+          }
+        }
+        return this.matmul(mixed, rows, F, block.o, F);
+      }
+
+      forwardLastLogits(tokenIds) {
+        if (tokenIds.length > this.maxContextLength) throw new Error("context is full");
+        const F = this.featureDim;
+        const H = this.hiddenDim;
+        const T = tokenIds.length;
+        let x = new Float32Array(T * F);
+        for (let r = 0; r < T; ++r) {
+          const tokenBase = tokenIds[r] * F;
+          const posBase = r * F;
+          for (let c = 0; c < F; ++c) x[posBase + c] = this.tokenEmbeddings[tokenBase + c] + this.positionalEmbeddings[posBase + c];
+        }
+        for (const block of this.blocks) {
+          const norm1 = this.rmsNorm(x, T, block.ln1);
+          const attended = this.attention(norm1, T, block);
+          for (let i = 0; i < x.length; ++i) x[i] += attended[i];
+          const norm2 = this.rmsNorm(x, T, block.ln2);
+          const hidden = this.matmul(norm2, T, F, block.up, H);
+          for (let i = 0; i < hidden.length; ++i) if (hidden[i] < 0) hidden[i] = 0;
+          const mlp = this.matmul(hidden, T, H, block.down, F);
+          for (let i = 0; i < x.length; ++i) x[i] += mlp[i];
+        }
+        const final = this.rmsNorm(x, T, this.finalNorm);
+        const last = (T - 1) * F;
+        const logits = new Float32Array(this.vocabSize);
+        for (let token = 0; token < this.vocabSize; ++token) {
+          let sum = 0;
+          const emb = token * F;
+          for (let f = 0; f < F; ++f) sum += final[last + f] * this.tokenEmbeddings[emb + f];
+          logits[token] = sum;
+        }
+        return logits;
+      }
+
+      sampleNextToken(tokenIds, temperature = 0.8, topK = 20) {
+        const logits = this.forwardLastLogits(tokenIds);
+        if (temperature <= 0) {
+          let best = 0;
+          for (let i = 1; i < logits.length; ++i) if (logits[i] > logits[best]) best = i;
+          return best;
+        }
+        let candidates = [];
+        for (let i = 0; i < logits.length; ++i) candidates.push({ id: i, score: logits[i] });
+        candidates.sort((a, b) => b.score - a.score);
+        if (topK > 0 && topK < candidates.length) candidates = candidates.slice(0, topK);
+        const maxScore = candidates[0].score;
+        let total = 0;
+        for (const candidate of candidates) {
+          candidate.probability = Math.exp((candidate.score - maxScore) / temperature);
+          total += candidate.probability;
+        }
+        let draw = Math.random() * total;
+        for (const candidate of candidates) {
+          draw -= candidate.probability;
+          if (draw <= 0) return candidate.id;
+        }
+        return candidates[candidates.length - 1].id;
+      }
+
+      async generate(tokenizer, prompt, options) {
+        const ids = tokenizer.encode(prompt);
+        const maxNewTokens = options.maxNewTokens ?? this.maxContextLength;
+        const temperature = options.temperature ?? 0.8;
+        const topK = options.topK ?? 20;
+        const stopText = options.stopText ?? "FIN.";
+        for (let step = 0; step < maxNewTokens; ++step) {
+          if (ids.length >= this.maxContextLength) break;
+          ids.push(this.sampleNextToken(ids, temperature, topK));
+          const text = tokenizer.decode(ids);
+          if (stopText && text.includes(stopText)) return text;
+          if (step % 2 === 1) await new Promise(requestAnimationFrame);
+        }
+        return tokenizer.decode(ids);
+      }
+    }
+
+    function articleFor(text) {
+      return /^[aeiou]/i.test(text) ? "an" : "a";
+    }
+
+    function weaponPhrase(weapon) {
+      return weapon === "poison" ? "poison" : `${articleFor(weapon)} ${weapon}`;
+    }
+
+    function woundPhrase(weapon) {
+      const wound = WOUND_BY_WEAPON[weapon] ?? weapon;
+      return `${articleFor(wound)} ${wound}`;
+    }
+
+    function choose(values, count) {
+      const pool = [...values];
+      const out = [];
+      while (out.length < count && pool.length) {
+        out.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+      }
+      return out;
+    }
+
+    function setStatus(text) {
+      el.status.textContent = text;
+    }
+
+    function populateSelect(select, values) {
+      select.innerHTML = "";
+      for (const value of values) {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = value;
+        select.appendChild(option);
+      }
+    }
+
+    function populateWoundSelect() {
+      el.woundSelect.innerHTML = "";
+      const none = document.createElement("option");
+      none.value = "";
+      none.textContent = "No Wound";
+      el.woundSelect.appendChild(none);
+      for (const wound of Object.values(WOUND_BY_WEAPON)) {
+        const option = document.createElement("option");
+        option.value = wound;
+        option.textContent = wound;
+        el.woundSelect.appendChild(option);
+      }
+    }
+
+    function isWeaponMode() {
+      return Boolean(state.bodyWeapon);
+    }
+
+    function selectedSuspect() {
+      return state.suspects[state.selected];
+    }
+
+    function setup() {
+      el.status = document.getElementById("status");
+      el.chips = document.getElementById("chips");
+      el.nameSelect = document.getElementById("nameSelect");
+      el.weaponSelect = document.getElementById("weaponSelect");
+      el.woundSelect = document.getElementById("woundSelect");
+      el.promptText = document.getElementById("promptText");
+      el.promptTitle = document.getElementById("promptTitle");
+      el.modelTitle = document.getElementById("modelTitle");
+      el.modelOutput = document.getElementById("modelOutput");
+      el.solveBtn = document.getElementById("solveBtn");
+      canvas = document.getElementById("board");
+      ctx = canvas.getContext("2d");
+
+      populateSelect(el.nameSelect, NAMES);
+      populateSelect(el.weaponSelect, WEAPONS);
+      populateWoundSelect();
+
+      document.getElementById("randomBtn").addEventListener("click", randomSetup);
+      document.getElementById("addBtn").addEventListener("click", addSuspect);
+      document.getElementById("removeBtn").addEventListener("click", removeSuspect);
+      el.solveBtn.addEventListener("click", solve);
+      el.nameSelect.addEventListener("change", () => {
+        if (state.selectedKind === "suspect") selectedSuspect().name = el.nameSelect.value;
+        render();
+      });
+      el.weaponSelect.addEventListener("change", () => {
+        if (state.selectedKind === "suspect") selectedSuspect().weapon = el.weaponSelect.value;
+        render();
+      });
+      el.woundSelect.addEventListener("change", () => {
+        state.bodyWeapon = el.woundSelect.value ? WEAPON_BY_WOUND[el.woundSelect.value] : null;
+        render();
+      });
+      canvas.addEventListener("pointerdown", boardPointerDown);
+      canvas.addEventListener("pointermove", boardPointerMove);
+      canvas.addEventListener("pointerup", boardPointerUp);
+      canvas.addEventListener("pointercancel", boardPointerCancel);
+      canvas.addEventListener("wheel", boardWheel, { passive: false });
+      new ResizeObserver(resizeCanvas).observe(canvas.parentElement);
+      window.addEventListener("orientationchange", () => setTimeout(resizeCanvas, 120));
+    }
+
+    function shuffleRooms() {
+      const needed = new Set([state.bodyRoom, ...state.suspects.map(s => s.room)]);
+      const rest = choose(LOCATIONS.filter(room => !needed.has(room)), 6 - Math.min(6, needed.size));
+      state.rooms = [...needed, ...rest].slice(0, 6);
+      render();
+    }
+
+    function randomSetup() {
+      state.rooms = choose(LOCATIONS, 6);
+      const names = choose(NAMES, 4);
+      const weapons = choose(WEAPONS, 4);
+      state.suspects = names.map((name, i) => ({ name, room: state.rooms[i % state.rooms.length], weapon: weapons[i] }));
+      state.selected = 0;
+      state.selectedKind = "suspect";
+      const murderer = state.suspects[Math.floor(Math.random() * state.suspects.length)];
+      const weaponMode = Math.random() < 0.5;
+      state.bodyRoom = weaponMode ? state.rooms[Math.floor(Math.random() * state.rooms.length)] : murderer.room;
+      state.bodyWeapon = weaponMode ? murderer.weapon : null;
+      render();
+    }
+
+    function addSuspect() {
+      if (state.suspects.length >= 4) return;
+      const used = new Set(state.suspects.map(s => s.name));
+      const name = NAMES.find(n => !used.has(n)) ?? NAMES[0];
+      state.suspects.push({ name, room: state.rooms[state.suspects.length % state.rooms.length], weapon: WEAPONS[state.suspects.length % WEAPONS.length] });
+      state.selected = state.suspects.length - 1;
+      state.selectedKind = "suspect";
+      render();
+    }
+
+    function removeSuspect() {
+      if (state.selectedKind !== "suspect" || state.suspects.length <= 1) return;
+      state.suspects.splice(state.selected, 1);
+      state.selected = Math.max(0, state.selected - 1);
+      render();
+    }
+
+    function resizeCanvas() {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 3);
+      canvas.width = Math.max(1, Math.round(rect.width * dpr));
+      canvas.height = Math.max(1, Math.round(rect.height * dpr));
+      canvas.style.width = `${rect.width}px`;
+      canvas.style.height = `${rect.height}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      draw();
+    }
+
+    function draw() {
+      if (!ctx) return;
+      const rect = canvas.getBoundingClientRect();
+      const w = rect.width;
+      const h = rect.height;
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = "#eef2ea";
+      ctx.fillRect(0, 0, w, h);
+
+      const weaponMode = isWeaponMode();
+      const cols = w < 680 ? 2 : 3;
+      const rows = 3;
+      const gap = 12;
+      const topPad = 0;
+      const roomW = (w - gap * (cols + 1)) / cols;
+      const roomH = (h - topPad - gap * (rows + 1)) / rows;
+      state.hitRooms = [];
+
+      for (let i = 0; i < state.rooms.length; ++i) {
+        const room = state.rooms[i];
+        const x = gap + (i % cols) * (roomW + gap);
+        const y = topPad + gap + Math.floor(i / cols) * (roomH + gap);
+        const hasBody = state.bodyRoom === room;
+        const roomSuspects = state.suspects.map((suspect, index) => ({ suspect, index })).filter(item => item.suspect.room === room);
+        const tokenTop = y + 44;
+        const tokenBottom = y + roomH - (hasBody ? 38 : 12);
+        const tokenViewportH = Math.max(28, tokenBottom - tokenTop);
+        const tokenContentH = Math.max(0, roomSuspects.length * 34 - 6);
+        const maxScroll = Math.max(0, tokenContentH - tokenViewportH);
+        const scroll = clamp(state.roomScroll[room] || 0, 0, maxScroll);
+        state.roomScroll[room] = scroll;
+        state.hitRooms.push({ room, x, y, w: roomW, h: roomH, maxScroll });
+
+        roundedRect(x, y, roomW, roomH, 12);
+        ctx.fillStyle = hasBody ? "#fff0ee" : "#fbfcf8";
+        ctx.fill();
+        ctx.strokeStyle = hasBody ? "#a83e3e" : "#bdc8bf";
+        ctx.lineWidth = hasBody ? 2.5 : 1.2;
+        ctx.stroke();
+
+        ctx.fillStyle = "#1d2a22";
+        ctx.font = `700 ${Math.max(15, Math.min(22, roomW * .08))}px system-ui`;
+        ctx.textBaseline = "top";
+        ctx.fillText(room, x + 12, y + 10, roomW - 24);
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(x + 8, tokenTop - 2, roomW - 16, tokenViewportH + 4);
+        ctx.clip();
+        let tokenY = tokenTop - scroll;
+        for (const item of roomSuspects) {
+          drawToken(x + 12, tokenY, roomW - 24, 28, COLORS[item.index % COLORS.length], item.suspect.name, weaponMode ? item.suspect.weapon : "");
+          tokenY += 34;
+        }
+        ctx.restore();
+
+        if (maxScroll > 0) {
+          drawRoomScrollbar(x + roomW - 10, tokenTop, tokenViewportH, scroll, maxScroll, tokenContentH);
+        }
+
+        if (hasBody) {
+          ctx.fillStyle = "#a83e3e";
+          ctx.font = `700 13px system-ui`;
+          const text = weaponMode ? `BODY / ${WOUND_BY_WEAPON[state.bodyWeapon]}` : "BODY";
+          ctx.fillText(text, x + 12, y + roomH - 28, roomW - 24);
+        }
+      }
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function drawRoomScrollbar(x, y, h, scroll, maxScroll, contentH) {
+      const trackW = 4;
+      const thumbH = clamp((h / contentH) * h, 22, h);
+      const thumbY = y + (scroll / maxScroll) * (h - thumbH);
+
+      roundedRect(x, y, trackW, h, 2);
+      ctx.fillStyle = "rgba(47, 80, 61, 0.16)";
+      ctx.fill();
+      roundedRect(x, thumbY, trackW, thumbH, 2);
+      ctx.fillStyle = "rgba(47, 80, 61, 0.68)";
+      ctx.fill();
+    }
+
+    function roundedRect(x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+    }
+
+    function drawToken(x, y, w, h, color, name, detail) {
+      roundedRect(x, y, w, h, h / 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.fillStyle = "#fff";
+      ctx.font = "700 13px system-ui";
+      ctx.textBaseline = "middle";
+      ctx.fillText(detail ? `${name} / ${detail}` : name, x + 10, y + h / 2, w - 20);
+    }
+
+    function boardPoint(event) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top
+      };
+    }
+
+    function hitRoomAt(x, y) {
+      return state.hitRooms.find(room => x >= room.x && x <= room.x + room.w && y >= room.y && y <= room.y + room.h);
+    }
+
+    function placeInRoom(room) {
+      if (state.selectedKind === "body") {
+        state.bodyRoom = room;
+      }
+      else {
+        selectedSuspect().room = room;
+      }
+      render();
+    }
+
+    function boardPointerDown(event) {
+      const { x, y } = boardPoint(event);
+      const hit = state.hitRooms.find(room => x >= room.x && x <= room.x + room.w && y >= room.y && y <= room.y + room.h);
+      if (!hit) return;
+      boardDrag = {
+        pointerId: event.pointerId,
+        hit,
+        startX: x,
+        startY: y,
+        lastY: y,
+        moved: false
+      };
+      canvas.setPointerCapture?.(event.pointerId);
+    }
+
+    function boardPointerMove(event) {
+      if (!boardDrag) return;
+      const { x, y } = boardPoint(event);
+      const movedEnough = Math.abs(x - boardDrag.startX) > 5 || Math.abs(y - boardDrag.startY) > 5;
+      if (movedEnough) boardDrag.moved = true;
+
+      if (boardDrag.hit.maxScroll > 0 && boardDrag.moved) {
+        const deltaY = y - boardDrag.lastY;
+        state.roomScroll[boardDrag.hit.room] = clamp((state.roomScroll[boardDrag.hit.room] || 0) - deltaY, 0, boardDrag.hit.maxScroll);
+        boardDrag.lastY = y;
+        event.preventDefault();
+        draw();
+      }
+    }
+
+    function boardPointerUp(event) {
+      if (!boardDrag) return;
+      const drag = boardDrag;
+      boardDrag = null;
+      canvas.releasePointerCapture?.(event.pointerId);
+      if (!drag.moved) {
+        placeInRoom(drag.hit.room);
+      }
+    }
+
+    function boardPointerCancel(event) {
+      boardDrag = null;
+      canvas.releasePointerCapture?.(event.pointerId);
+    }
+
+    function boardWheel(event) {
+      const { x, y } = boardPoint(event);
+      const hit = hitRoomAt(x, y);
+      if (!hit || hit.maxScroll <= 0) return;
+      state.roomScroll[hit.room] = clamp((state.roomScroll[hit.room] || 0) + event.deltaY, 0, hit.maxScroll);
+      event.preventDefault();
+      draw();
+    }
+
+    function buildPrompt() {
+      const lines = state.suspects.map(suspect => {
+        if (isWeaponMode()) return `${suspect.name} has ${weaponPhrase(suspect.weapon)}`;
+        return `${suspect.name} is in the ${suspect.room}`;
+      });
+      const body = isWeaponMode()
+        ? `A body was found in the ${state.bodyRoom} with ${woundPhrase(state.bodyWeapon)}`
+        : `A body was found in the ${state.bodyRoom}`;
+      lines.splice(Math.min(2, lines.length), 0, body);
+      lines.push("Therefore the murderer is: ");
+      return lines.join("\n");
+    }
+
+    function expectedAnswer() {
+      const matches = isWeaponMode()
+        ? state.suspects.filter(s => s.weapon === state.bodyWeapon)
+        : state.suspects.filter(s => s.room === state.bodyRoom);
+      return matches.length === 1 ? matches[0].name : "Unknown";
+    }
+
+    function renderChips() {
+      el.chips.innerHTML = "";
+      const bodyChip = document.createElement("button");
+      bodyChip.className = `chip${state.selectedKind === "body" ? " active" : ""}`;
+      bodyChip.innerHTML = `<span class="swatch" style="background:#a83e3e"></span>Body`;
+      bodyChip.addEventListener("click", () => {
+        state.selectedKind = "body";
+        render();
+      });
+      el.chips.appendChild(bodyChip);
+
+      for (let i = 0; i < state.suspects.length; ++i) {
+        const suspect = state.suspects[i];
+        const chip = document.createElement("button");
+        chip.className = `chip${state.selectedKind === "suspect" && i === state.selected ? " active" : ""}`;
+        chip.innerHTML = `<span class="swatch" style="background:${COLORS[i % COLORS.length]}"></span>${suspect.name}`;
+        chip.addEventListener("click", () => {
+          state.selectedKind = "suspect";
+          state.selected = i;
+          render();
+        });
+        el.chips.appendChild(chip);
+      }
+    }
+
+    function render() {
+      renderChips();
+      const selectingBody = state.selectedKind === "body";
+      el.nameSelect.classList.toggle("is-hidden", selectingBody);
+      el.weaponSelect.classList.toggle("is-hidden", selectingBody);
+      el.woundSelect.classList.toggle("is-hidden", !selectingBody);
+      el.woundSelect.classList.toggle("wide-select", selectingBody);
+      document.getElementById("addBtn").classList.toggle("is-hidden", selectingBody);
+      document.getElementById("removeBtn").classList.toggle("is-hidden", selectingBody);
+
+      if (selectingBody) {
+        el.woundSelect.value = state.bodyWeapon ? WOUND_BY_WEAPON[state.bodyWeapon] : "";
+      }
+      else {
+        const selected = selectedSuspect();
+        el.nameSelect.value = selected.name;
+        el.weaponSelect.value = selected.weapon;
+      }
+
+      document.getElementById("removeBtn").disabled = state.suspects.length <= 1;
+      document.getElementById("addBtn").disabled = state.suspects.length >= 4;
+      el.promptTitle.textContent = `${isWeaponMode() ? "Weapon" : "Location"} Prompt`;
+      el.modelTitle.textContent = `Model Output (Expected: ${expectedAnswer()})`;
+      el.promptText.textContent = buildPrompt();
+      draw();
+    }
+
+    function setBusy(busy, label = "") {
+      el.solveBtn.disabled = busy || !state.model;
+      setStatus(busy ? label : (state.model ? "Ready" : "Loading..."));
+    }
+
+    async function solve() {
+      if (!state.model) return;
+      setBusy(true, "Solving...");
+      const prompt = buildPrompt();
+      try {
+        const text = await state.model.generate(state.tokenizer, prompt, { temperature: 0, topK: 0, maxNewTokens: CONFIG.maxContextLength, stopText: "FIN." });
+        el.modelOutput.textContent = text.slice(prompt.length).trim();
+      }
+      catch (error) {
+        el.modelOutput.textContent = error.message || String(error);
+      }
+      setBusy(false);
+    }
+
+    async function generateScratch() {
+      if (!state.model) return;
+      const seed = `${selectedSuspect()?.name ?? NAMES[Math.floor(Math.random() * NAMES.length)]} is`;
+      setBusy(true, "Generating...");
+      try {
+        const text = await state.model.generate(state.tokenizer, seed, { temperature: .7, topK: 15, maxNewTokens: CONFIG.maxContextLength, stopText: "FIN." });
+        el.modelOutput.textContent = text;
+        parseGenerated(text);
+      }
+      catch (error) {
+        el.modelOutput.textContent = error.message || String(error);
+      }
+      setBusy(false);
+    }
+
+    function parseGenerated(text) {
+      const suspects = [];
+      const rooms = new Set();
+      let bodyRoom = state.bodyRoom;
+      let bodyWeapon = state.bodyWeapon;
+      let weaponMode = false;
+      for (const line of text.split(/\n+/).map(line => line.trim()).filter(Boolean)) {
+        let match = line.match(/^A body was found in the (.+?)(?: with (?:a |an )?(.+))?$/);
+        if (match) {
+          bodyRoom = known(match[1], LOCATIONS) ?? bodyRoom;
+          rooms.add(bodyRoom);
+          if (match[2]) {
+            bodyWeapon = WEAPON_BY_WOUND[known(match[2], Object.values(WOUND_BY_WEAPON))] ?? bodyWeapon;
+            weaponMode = true;
+          }
+          continue;
+        }
+        match = line.match(/^(\w+) is in the (.+?)(?: with (?:a |an )?(.+))?$/);
+        if (match) {
+          const name = known(match[1], NAMES) ?? match[1];
+          const room = known(match[2], LOCATIONS) ?? LOCATIONS[0];
+          const weapon = match[3] ? (known(match[3], WEAPONS) ?? WEAPONS[0]) : WEAPONS[suspects.length % WEAPONS.length];
+          if (match[3]) weaponMode = true;
+          rooms.add(room);
+          suspects.push({ name, room, weapon });
+          continue;
+        }
+        match = line.match(/^(\w+) has (?:a |an )?(.+)$/);
+        if (match) {
+          const name = known(match[1], NAMES) ?? match[1];
+          const weapon = known(match[2], WEAPONS) ?? WEAPONS[0];
+          suspects.push({ name, room: state.rooms[suspects.length % state.rooms.length], weapon });
+          weaponMode = true;
+        }
+      }
+      if (suspects.length) state.suspects = suspects.slice(0, 4);
+      state.selected = 0;
+      state.selectedKind = "suspect";
+      state.bodyRoom = bodyRoom;
+      state.bodyWeapon = weaponMode ? bodyWeapon : null;
+      const needed = [...rooms, bodyRoom].filter(Boolean);
+      state.rooms = [...new Set([...needed, ...choose(LOCATIONS.filter(room => !needed.includes(room)), 6)])].slice(0, 6);
+      render();
+    }
+
+    function known(text, values) {
+      const lower = text.toLowerCase().replace(/[.]/g, "").trim();
+      return values.find(value => value === lower) ?? values.find(value => lower.includes(value));
+    }
+
+    async function loadModel() {
+      try {
+        const [vocabResponse, weightsResponse] = await Promise.all([fetch("./vocab.json"), fetch("./weights.bin")]);
+        if (!vocabResponse.ok || !weightsResponse.ok) throw new Error("could not load vocab.json or weights.bin");
+        state.tokenizer = new Tokenizer();
+        state.tokenizer.deserializeFromJSON(await vocabResponse.text());
+        state.model = new FastGPT(CONFIG);
+        state.model.loadWeights(await weightsResponse.arrayBuffer());
+        setBusy(false);
+      }
+      catch (error) {
+        setStatus("Load failed");
+        el.modelOutput.textContent = `${error.message || error}\n\nRun with: python3 -m http.server 8000 --bind 0.0.0.0`;
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      setup();
+      render();
+      setBusy(true, "Loading...");
+      loadModel();
+    });
+  </script>
+</body>
+</html>
