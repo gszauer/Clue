@@ -1,5 +1,7 @@
 # Clue 250K
 
+[Web Demo](https://gszauer.github.io/Clue)
+
 Clue 250K is a tiny educational language model trained to solve synthetic
 Clue-style murder mysteries. It is intentionally small enough to understand
 end-to-end: the tokenizer, model, training loop, inference code, JavaScript
